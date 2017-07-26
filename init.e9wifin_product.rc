@@ -1,0 +1,29 @@
+on fs
+    mkdir /cust 0771 system system
+    wait /dev/block/platform/msm_sdcc.1/by-name/cust
+    exec /system/bin/e2fsck -y /dev/block/platform/msm_sdcc.1/by-name/cust
+    mount ext4 /dev/block/platform/msm_sdcc.1/by-name/cust /cust rw nosuid nodev barrier=1 noauto_da_alloc
+    restorecon_recursive /cust
+    mount ext4 /dev/block/platform/msm_sdcc.1/by-name/cust /cust ro remount nosuid nodev barrier=1 noauto_da_alloc
+
+on init
+exec /sbin/setup_fs_static \
+    /dev/block/platform/msm_sdcc.1/by-name/cust \
+    no_reboot
+
+# SW IrRC
+chown media media /dev/msm_IRRC_pcm_dec
+chmod 0660 /dev/msm_IRRC_pcm_dec
+
+# SW IrRC
+service irrcServer /system/bin/irrcServer
+   class main
+   user media
+   group media
+   onrestart restart irrcServer
+
+# charger_monitor service for chargerlogo
+service charger_monitor /system/bin/charger_monitor qpnp_charger 500000 32
+   user system
+   group system
+   disabled
